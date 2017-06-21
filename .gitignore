@@ -1,0 +1,14 @@
+.idea
+*.xml
+*.iml
+*.rpm
+*.h
+*.pyc
+*.pyo
+*.bak
+rpmbuild
+/.idea/*.xml
+docker.log
+testing.log
+.vagrant/
+docker-all-in-one.txt

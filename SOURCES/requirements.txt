@@ -1,0 +1,5 @@
+###### Requirements python libraries ######
+pprint
+bottle
+requests
+redis

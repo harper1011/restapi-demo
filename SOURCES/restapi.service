@@ -1,0 +1,13 @@
+[Unit]
+Description=Simple RESTful server
+After=network-online.target
+
+[Service]
+ExecStart=/opt/script/restapi/simple_rest_server.py localhost 3000
+Restart=on-failure
+RestartSec=5s
+StartLimitInterval=0
+StartLimitBurst=0
+
+[Install]
+WantedBy=multi-user.target

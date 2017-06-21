@@ -1,0 +1,50 @@
+stages:
+  - build
+  - test
+
+
+make_rpm:
+  image: centos:latest
+  stage: build
+  script:
+    - yum -y install epel-release; yum -y update; yum install -y python rpm-build rpmdevtools; yum -y groupinstall "Development Tools"
+    - make clean rpm
+  artifacts:
+    paths:
+      - /builds/harper1011/restapi-demo/simple-restapi-server-*.rpm
+
+run_test:
+  image: "python:2.7"
+  services:
+    - redis
+  stage: test
+  script:
+    - pip install -r SOURCES/requirements.txt
+    - python SOURCES/simple_rest_server.py  '127.0.0.1' 3000 &
+    - python SOURCES/test_rest_server.py
+
+
+run_test_in_docker:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: test
+  before_script:
+    - apk update
+    - apk add python py2-pip
+    - pip install -r SOURCES/requirements.txt
+  script:
+    - docker build -t restapi-demo .
+    - docker run -d --name redis -p 6379:6379 redis
+    - docker run -d --name restapi-demo -p 3000:3000 --link redis:redis restapi-demo
+    - export REST_CONTAINER_IP=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' restapi-demo)
+    - docker run -d --name tester --link restapi-demo:restapi-demo -v "$PWD"/SOURCES/:/opt/script/restapi/ python:2 /bin/bash -c "pip install -r /opt/script/restapi/requirements.txt; python /opt/script/restapi/test_rest_server.py $REST_CONTAINER_IP"
+    - sleep 0.5
+    - docker ps -a
+  after_script:
+    - docker logs restapi-demo
+    - docker logs redis
+    - docker logs tester
+    - docker container rm restapi-demo -f
+    - docker container rm redis -f
+    - docker container rm tester -f
